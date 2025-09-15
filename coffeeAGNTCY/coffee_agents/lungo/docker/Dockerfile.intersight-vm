@@ -1,0 +1,38 @@
+FROM python:3.13.0-slim
+
+# Fast, sane Python defaults
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Minimal system deps for basic debugging/network checks
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git curl wget iputils-ping && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install uv (resolver/venv/runner)
+RUN pip install --no-cache-dir uv
+
+WORKDIR /app
+
+# ---- dependencies (cacheable) ----
+# Copy lock/manifest first to leverage build cache
+COPY coffeeAGNTCY/coffee_agents/lungo/pyproject.toml \
+     coffeeAGNTCY/coffee_agents/lungo/uv.lock ./
+
+RUN uv sync --locked --no-editable
+
+# ---- app code ----
+COPY coffeeAGNTCY/coffee_agents/lungo/ .
+
+# Ensure imports resolve from /app
+ENV PYTHONPATH=/app
+
+# (Optional) If your transport is SLIM on the host, uncomment:
+# ENV DEFAULT_MESSAGE_TRANSPORT=SLIM
+# ENV TRANSPORT_SERVER_ENDPOINT=http://host.docker.internal:46357
+
+# VM agent HTTP port
+EXPOSE 9999
+
+# Start the Intersight VM agent server
+CMD ["uv", "run", "python", "agents/farms/intersight_vm_management/vm_server.py"]
