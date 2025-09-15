@@ -34,6 +34,8 @@ from agents.supervisors.auction.graph.models import (
     InventoryArgs,
     CreateOrderArgs,
 )
+from agents.farms.intersight_vm_management.card import AGENT_CARD as intersight_vm_agent_card
+from agents.supervisors.auction.graph.models import VMCommandArgs
 from services.identity_service import IdentityService
 from services.identity_service_impl import IdentityServiceImpl
 
@@ -395,3 +397,63 @@ async def get_order_details(order_id: str) -> str:
     else:
         logger.error("Unknown response type")
         return "Unknown response type from order agent"
+    
+
+@tool(args_schema=VMCommandArgs)
+@ioa_tool_decorator(name="intersight_vm")
+async def intersight_vm(prompt: str) -> str:
+    """
+    Send a natural-language command/question to the Intersight VM agent.
+    The VM agent handles:
+      - create_vm (via MCP)
+      - create_vm_snapshot (via MCP)
+      - generic VM Q&A
+    """
+    logger.info("intersight_vm tool: %s", prompt)
+
+    # Optional identity verification (pattern-matched with your other tools)
+    identity_service = IdentityServiceImpl(api_key=IDENTITY_API_KEY, base_url=IDENTITY_API_SERVER_URL)
+    try:
+        verify_farm_identity(identity_service, intersight_vm_agent_card.name)
+    except ValueError as e:
+        return str(e)
+
+    # Shared factory & transport
+    factory = get_factory()
+    transport = factory.create_transport(
+        DEFAULT_MESSAGE_TRANSPORT,
+        endpoint=TRANSPORT_SERVER_ENDPOINT,
+        name="default/default/exchange_graph"
+    )
+
+    # Direct A2A to the VM agent (no broadcast)
+    client = await factory.create_client(
+        "A2A",
+        agent_topic=A2AProtocol.create_agent_topic(intersight_vm_agent_card),
+        transport=transport,
+    )
+
+    request = SendMessageRequest(
+        id=str(uuid4()),
+        params=MessageSendParams(
+            message=Message(
+                messageId=str(uuid4()),
+                role=Role.user,
+                parts=[Part(TextPart(text=prompt))],
+            ),
+        )
+    )
+
+    response = await client.send_message(request)
+    logger.info("Response from Intersight VM agent: %s", response)
+
+    if response.root.result and response.root.result.parts:
+        part = response.root.result.parts[0].root
+        if hasattr(part, "text"):
+            return part.text.strip()
+    elif response.root.error:
+        logger.error("A2A error (intersight_vm): %s", response.root.error.message)
+        return f"Error from Intersight VM agent: {response.root.error.message}"
+    else:
+        logger.error("Unknown response type from Intersight VM agent")
+        return "Unknown response type from Intersight VM agent"

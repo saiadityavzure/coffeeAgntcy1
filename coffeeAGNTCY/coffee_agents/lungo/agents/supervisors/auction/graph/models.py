@@ -29,3 +29,20 @@ class CreateOrderArgs(BaseModel):
         ...,
         description="The price of the order. Must be a positive float."
     )
+
+
+# ---------------------------
+# Intersight VM (generic pass-through)
+# ---------------------------
+
+class VMCommandArgs(BaseModel):
+    """
+    Generic VM command for the Intersight VM agent.
+
+    Keep the supervisor decoupled: pass a natural-language prompt to the VM agent,
+    which handles intent classification (create VM / snapshot VM / VM Q&A) and MCP calls.
+    """
+    prompt: str = Field(
+        ..., min_length=1,
+        description="Natural-language VM command/question for the Intersight VM agent."
+    )
