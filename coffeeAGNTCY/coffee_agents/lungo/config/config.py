@@ -10,6 +10,7 @@ DEFAULT_MESSAGE_TRANSPORT = os.getenv("DEFAULT_MESSAGE_TRANSPORT", "NATS")
 TRANSPORT_SERVER_ENDPOINT = os.getenv("TRANSPORT_SERVER_ENDPOINT", "nats://localhost:4222")
 
 FARM_BROADCAST_TOPIC = os.getenv("FARM_BROADCAST_TOPIC", "farm_broadcast")
+INTERSIGHT_VM_BROADCAST_TOPIC = os.getenv("INTERSIGHT_VM_BROADCAST_TOPIC", "lungo.intersight.vm.broadcast")
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER")
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO").upper()
@@ -26,4 +27,6 @@ IDENTITY_API_SERVER_URL = os.getenv("IDENTITY_API_SERVER_URL", "https://api.agen
 ## URLs for the farm agents' well-known agent cards
 VIETNAM_FARM_AGENT_URL = os.getenv("VIETNAM_FARM_AGENT_URL", "http://127.0.0.1:9997/.well-known/agent-card.json")
 COLOMBIA_FARM_AGENT_URL = os.getenv("COLOMBIA_FARM_AGENT_URL", "http://127.0.0.1:9998/.well-known/agent-card.json")
+INTERSIGHT_VM_AGENT_URL = os.getenv("INTERSIGHT_VM_AGENT_URL", "http://127.0.0.1:9999/.well-known/agent-card.json")
 
+IDENTITY_INTERSIGHT_VM_AGENT_SERVICE_API_KEY = os.getenv("IDENTITY_INTERSIGHT_VM_AGENT_SERVICE_API_KEY", "5N%q@p6H{t7A!dY&yM3zJb2Lw9Xf^R0u_8Kc)1nG4sP:Qe6Vh")
